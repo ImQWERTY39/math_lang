@@ -1,1 +1,3 @@
+mod math;
+
 fn main() {}
