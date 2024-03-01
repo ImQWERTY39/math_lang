@@ -1,5 +1,5 @@
-const VALID_TOKENS: [char; 14] = [
-    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '-', '*', '/',
+const VALID_TOKENS: [char; 15] = [
+    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '+', '-', '*', '/',
 ];
 
 #[derive(Debug)]
@@ -21,11 +21,6 @@ impl ArithmeticExpression {
             Self::Divide(i, j) => i.evaluate() / j.evaluate(),
         }
     }
-
-    // pub fn parse(expression: &str) -> Self {
-    //     let expr = tokenize(expression);
-    //     parser(&expr)
-    // }
 }
 
 fn tokenize(expression: &str) -> Vec<String> {
@@ -43,7 +38,7 @@ fn tokenize(expression: &str) -> Vec<String> {
             panic!("Invalid token");
         }
 
-        if i.is_ascii_digit() {
+        if i.is_ascii_digit() || i == '.' {
             if !in_digit {
                 in_digit = true;
             }
@@ -69,7 +64,19 @@ fn tokenize(expression: &str) -> Vec<String> {
     tokenized
 }
 
-// fn get_lowest_precedence<'a>(expr: &'a [&str]) -> &'a str {}
+fn get_lowest_precedence_index(expr: &[&str]) -> usize {
+    let mut character = expr.first().unwrap();
+    let mut index = 0;
+
+    for (idx, val) in expr.iter().enumerate() {
+        if lower_precedence(val, character) {
+            character = val;
+            index = idx;
+        }
+    }
+
+    index
+}
 
 #[cfg(test)]
 mod test {
@@ -80,5 +87,9 @@ mod test {
         let tokenised1 = tokenize("5 * 2 + 3");
         let tokenised1: Vec<&str> = tokenised1.iter().map(|x| x.as_str()).collect();
         assert_eq!(tokenised1, vec!["5", "*", "2", "+", "3"]);
+
+        let tokenised2 = tokenize("5      *\n 2 + 5.3");
+        let tokenised2: Vec<&str> = tokenised2.iter().map(|x| x.as_str()).collect();
+        assert_eq!(tokenised2, vec!["5", "*", "2", "+", "5.3"]);
     }
 }
