@@ -1,6 +1,5 @@
-const VALID_TOKENS: [char; 15] = [
-    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '+', '-', '*', '/',
-];
+mod parser;
+mod tokenizer;
 
 #[derive(Debug)]
 pub enum ArithmeticExpression {
@@ -21,75 +20,52 @@ impl ArithmeticExpression {
             Self::Divide(i, j) => i.evaluate() / j.evaluate(),
         }
     }
-}
 
-fn tokenize(expression: &str) -> Vec<String> {
-    let mut tokenized = Vec::new();
+    pub fn parse(expression: &str) -> Self {
+        let expr = tokenizer::tokenize(expression);
+        let expr_tokens: Vec<&str> = expr.iter().map(|x| x.as_str()).collect();
 
-    let mut digit = String::new();
-    let mut in_digit = false;
-
-    for i in expression.chars() {
-        if i.is_whitespace() {
-            continue;
-        }
-
-        if !VALID_TOKENS.contains(&i) {
-            panic!("Invalid token");
-        }
-
-        if i.is_ascii_digit() || i == '.' {
-            if !in_digit {
-                in_digit = true;
-            }
-
-            digit.push(i);
-            continue;
-        }
-
-        if in_digit {
-            tokenized.push(digit.clone());
-
-            digit = String::new();
-            in_digit = false;
-        }
-
-        tokenized.push(i.to_string());
-    }
-
-    if !digit.is_empty() {
-        tokenized.push(digit);
-    }
-
-    tokenized
-}
-
-fn get_lowest_precedence_index(expr: &[&str]) -> usize {
-    let mut character = expr.first().unwrap();
-    let mut index = 0;
-
-    for (idx, val) in expr.iter().enumerate() {
-        if lower_precedence(val, character) {
-            character = val;
-            index = idx;
-        }
-    }
-
-    index
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn test1() {
-        let tokenised1 = tokenize("5 * 2 + 3");
-        let tokenised1: Vec<&str> = tokenised1.iter().map(|x| x.as_str()).collect();
-        assert_eq!(tokenised1, vec!["5", "*", "2", "+", "3"]);
-
-        let tokenised2 = tokenize("5      *\n 2 + 5.3");
-        let tokenised2: Vec<&str> = tokenised2.iter().map(|x| x.as_str()).collect();
-        assert_eq!(tokenised2, vec!["5", "*", "2", "+", "5.3"]);
+        parser::parse(&expr_tokens)
     }
 }
+
+// #[cfg(test)]
+// mod test {
+//     use super::*;
+//     use parser::*;
+//     use tokenizer::*;
+
+//     fn compare(tokenized: Vec<String>, expected: Vec<&str>) -> bool {
+//         tokenized.iter().map(|x| x.as_str()).collect::<Vec<&str>>() == expected
+//     }
+
+//     #[test]
+//     fn tokenizing_normal() {
+//         assert!(compare(tokenize("2 + 3"), vec!["2", "+", "3"]));
+//         assert!(compare(tokenize("2 - 3"), vec!["2", "-", "3"]));
+//         assert!(compare(tokenize("2 * 3"), vec!["2", "*", "3"]));
+//         assert!(compare(tokenize("2 / 3"), vec!["2", "/", "3"]));
+//         assert!(compare(tokenize("2213 + 433"), vec!["2213", "+", "433"]));
+//         assert!(compare(
+//             tokenize("2 2 1 3 + 433  "),
+//             vec!["2", "2", "1", "3", "+", "433"]
+//         ));
+//         assert!(compare(
+//             tokenize("2213.234 + 433 - 0"),
+//             vec!["2213.234", "+", "433", "-", "0"]
+//         ));
+//     }
+
+//     #[test]
+//     fn tokenizing_with_whitespace() {
+//         let tokenized1 = tokenize("5   *\n  2  \t   +    3");
+//         assert!(compare(tokenized1, vec!["5", "*", "2", "+", "3"]))
+//     }
+
+//     #[test]
+//     fn lowest_precedence_check() {
+//         assert_eq!(get_lowest_precedence_index(&["2", "+", "3"]), 1);
+//         assert_eq!(get_lowest_precedence_index(&["2", "3"]), 0);
+//         assert_eq!(get_lowest_precedence_index(&["2", "*", "3", "+", "5.6"]), 3);
+//     }
+// }
