@@ -1,21 +1,28 @@
-use std::io::Write;
+use std::{collections::HashMap, io::Write};
 
 use crate::math::ArithmeticExpression;
 
 pub fn mainloop() {
+    let mut scope = init_scope();
     let mut previous: Option<String> = None;
 
     loop {
-        let expr = input(">>> ");
+        let val = input(">>> ");
 
-        if expr.is_empty() {
+        if val.is_empty() {
             println!();
             continue;
         }
 
+        let expr = val.trim();
+
+        if expr.is_empty() {
+            continue;
+        }
+
         let expression = match previous {
-            Some(i) => ArithmeticExpression::parse(expr.replace('_', &i).as_str()),
-            None => ArithmeticExpression::parse(&expr),
+            Some(i) => ArithmeticExpression::parse(expr.replace('_', &i).as_str(), &scope),
+            None => ArithmeticExpression::parse(&expr, &scope),
         };
 
         match expression {
@@ -34,6 +41,21 @@ pub fn mainloop() {
     }
 }
 
+fn init_scope() -> HashMap<String, ArithmeticExpression> {
+    let mut scope = HashMap::new();
+
+    scope.insert(
+        String::from("pi"),
+        ArithmeticExpression::Number(3.141592653589793),
+    );
+    scope.insert(
+        String::from('e'),
+        ArithmeticExpression::Number(2.718281828459045),
+    );
+
+    scope
+}
+
 fn input(msg: &str) -> String {
     print!("{}", msg);
     let _ = std::io::stdout().flush();
@@ -41,5 +63,5 @@ fn input(msg: &str) -> String {
     let mut input_buffer = String::new();
     let _ = std::io::stdin().read_line(&mut input_buffer);
 
-    input_buffer.trim().to_owned()
+    input_buffer
 }

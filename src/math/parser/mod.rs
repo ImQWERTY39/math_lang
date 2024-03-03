@@ -37,6 +37,10 @@ pub fn parse(expr: &[&str]) -> Option<ArithmeticExpression> {
             Box::new(parse(&expr[..idx])?),
             Box::new(parse(&expr[idx + 1..])?),
         ),
+        "^" => ArithmeticExpression::Power(
+            Box::new(parse(&expr[..idx])?),
+            Box::new(parse(&expr[idx + 1..])?),
+        ),
         _ => unreachable!(),
     })
 }
@@ -92,6 +96,7 @@ fn get_precedence_level(token: &str) -> u32 {
     match token {
         "+" | "-" => 0,
         "*" | "/" => 1,
-        _ => 2,
+        "^" => 2,
+        _ => 3,
     }
 }

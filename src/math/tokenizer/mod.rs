@@ -1,12 +1,13 @@
-const VALID_TOKENS: [char; 17] = [
-    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '+', '-', '*', '/', '(', ')',
-];
+const SYMBOLS: [char; 7] = ['+', '-', '*', '/', '^', '(', ')'];
 
 pub fn tokenize(expression: &str) -> Vec<String> {
     let mut tokenized = Vec::new();
 
     let mut digit = String::new();
     let mut in_digit = false;
+
+    let mut word = String::new();
+    let mut in_word = false;
 
     for i in expression.chars() {
         if i.is_whitespace() {
@@ -17,11 +18,30 @@ pub fn tokenize(expression: &str) -> Vec<String> {
                 in_digit = false;
             }
 
+            if in_word {
+                tokenized.push(word.clone());
+
+                word = String::new();
+                in_word = false;
+            }
+
             continue;
         }
 
-        if !VALID_TOKENS.contains(&i) {
-            panic!("Invalid token");
+        if i.is_ascii_alphabetic() {
+            if !in_word {
+                in_word = true;
+            }
+
+            word.push(i);
+            continue;
+        }
+
+        if in_word {
+            tokenized.push(word.clone());
+
+            word = String::new();
+            in_word = false;
         }
 
         if i.is_ascii_digit() || i == '.' {
@@ -40,11 +60,19 @@ pub fn tokenize(expression: &str) -> Vec<String> {
             in_digit = false;
         }
 
+        if !SYMBOLS.contains(&i) {
+            panic!("Invalid token");
+        }
+
         tokenized.push(i.to_string());
     }
 
     if !digit.is_empty() {
         tokenized.push(digit);
+    }
+
+    if !word.is_empty() {
+        tokenized.push(word);
     }
 
     correct_negative_numbers(tokenized)
