@@ -47,5 +47,41 @@ pub fn tokenize(expression: &str) -> Vec<String> {
         tokenized.push(digit);
     }
 
-    tokenized
+    correct_negative_numbers(tokenized)
+}
+
+fn correct_negative_numbers(tokenized: Vec<String>) -> Vec<String> {
+    let mut corrected = Vec::with_capacity(tokenized.len());
+    let mut i = 0;
+
+    while i < tokenized.len() {
+        if i == 0 {
+            if let Ok(number) = tokenized.get(1).unwrap_or(&String::new()).parse::<f64>() {
+                corrected.push((number * -1.0).to_string());
+                i += 2;
+                continue;
+            } else {
+                corrected.push(tokenized[0].to_owned());
+                i += 1;
+                continue;
+            }
+        }
+
+        if tokenized.get(i - 1).unwrap().parse::<f64>().is_err() {
+            if let Ok(number) = tokenized
+                .get(i + 1)
+                .unwrap_or(&String::new())
+                .parse::<f64>()
+            {
+                corrected.push((number * -1.0).to_string());
+                i += 2;
+                continue;
+            }
+        }
+
+        corrected.push(tokenized[i].to_owned());
+        i += 1;
+    }
+
+    corrected
 }

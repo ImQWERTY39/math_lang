@@ -7,8 +7,14 @@ pub fn mainloop() {
 
     loop {
         let expr = input(">>> ");
+
+        if expr.is_empty() {
+            println!();
+            continue;
+        }
+
         let expression = match previous {
-            Some(i) => AE::parse(expr.replace("_", &i).as_str()),
+            Some(i) => AE::parse(expr.replace('_', &i).as_str()),
             None => AE::parse(&expr),
         };
 

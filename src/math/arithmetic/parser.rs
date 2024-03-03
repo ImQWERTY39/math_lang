@@ -1,7 +1,7 @@
 use super::ArithmeticExpression;
 
 /*
-2 * (5 + (2 - (3 * 5))) / (4 / (6 + 2))
+2 * (5 + (2 - (3 * 5))) * 2 / (4 / (6 + 2))
 
 lowest precednce with no. of open brackets = 0
 
@@ -10,7 +10,7 @@ if left or right is (expr):
 */
 
 pub fn parse(expr: &[&str]) -> Option<ArithmeticExpression> {
-    if expr.len() == 0 {
+    if expr.is_empty() {
         return None;
     }
 
@@ -23,7 +23,7 @@ pub fn parse(expr: &[&str]) -> Option<ArithmeticExpression> {
         ));
     }
 
-    let idx = get_lowest_precedence_index(&expr);
+    let idx = get_lowest_precedence_index(expr);
 
     Some(match expr[idx] {
         "+" => ArithmeticExpression::Add(
@@ -51,7 +51,7 @@ fn get_lowest_precedence_index(expr: &[&str]) -> usize {
     let mut index = 0;
 
     for (idx, val) in expr.iter().enumerate() {
-        if get_precedence_level(&lowest) > get_precedence_level(val) {
+        if get_precedence_level(lowest) > get_precedence_level(val) {
             lowest = val;
             index = idx;
         }
