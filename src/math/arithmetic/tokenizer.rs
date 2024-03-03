@@ -1,5 +1,5 @@
-const VALID_TOKENS: [char; 15] = [
-    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '+', '-', '*', '/',
+const VALID_TOKENS: [char; 17] = [
+    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '+', '-', '*', '/', '(', ')',
 ];
 
 pub fn tokenize(expression: &str) -> Vec<String> {
@@ -55,7 +55,7 @@ fn correct_negative_numbers(tokenized: Vec<String>) -> Vec<String> {
     let mut i = 0;
 
     while i < tokenized.len() {
-        if i == 0 {
+        if i == 0 && tokenized[0] == "-" {
             if let Ok(number) = tokenized.get(1).unwrap_or(&String::new()).parse::<f64>() {
                 corrected.push((number * -1.0).to_string());
                 i += 2;
@@ -67,7 +67,7 @@ fn correct_negative_numbers(tokenized: Vec<String>) -> Vec<String> {
             }
         }
 
-        if tokenized.get(i - 1).unwrap().parse::<f64>().is_err() {
+        if tokenized[i] == "-" && tokenized.get(i - 1).unwrap().parse::<f64>().is_err() {
             if let Ok(number) = tokenized
                 .get(i + 1)
                 .unwrap_or(&String::new())
