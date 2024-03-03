@@ -1,6 +1,6 @@
 use std::{collections::HashMap, io::Write};
 
-use crate::math::ArithmeticExpression;
+use crate::math::{ArithmeticExpression, EvaluationResult};
 
 pub fn mainloop() {
     let mut scope = init_scope();
@@ -21,20 +21,27 @@ pub fn mainloop() {
         }
 
         let expression = match previous {
-            Some(i) => ArithmeticExpression::parse(expr.replace('_', &i).as_str(), &scope),
+            Some(ref i) => ArithmeticExpression::parse(expr.replace('_', &i).as_str(), &scope),
             None => ArithmeticExpression::parse(&expr, &scope),
         };
 
-        match expression {
-            Some(i) => {
-                let result = i.evaluate();
+        if let None = expression {
+            println!("Invalid expression");
+            previous = None;
+            continue;
+        }
 
-                println!("{}", result);
-                previous = Some(result.to_string());
+        match expression.unwrap().evaluate() {
+            EvaluationResult::Number(i) => {
+                println!("{}", i);
+                previous = Some(i.to_string());
             }
-
-            None => {
-                println!("Invalid expression");
+            EvaluationResult::Equality(i) => {
+                println!("{}", i);
+                previous = None;
+            }
+            EvaluationResult::Assignment(i, j) => {
+                scope.insert(i, j);
                 previous = None;
             }
         }

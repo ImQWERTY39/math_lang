@@ -12,15 +12,42 @@ pub enum ArithmeticExpression {
     Power(Box<Self>, Box<Self>),
 }
 
+#[derive(Debug)]
+pub enum EvaluationResult {
+    Number(f64),
+    Equality(bool),
+    Assignment(String, ArithmeticExpression),
+}
+
+impl EvaluationResult {
+    fn get_number(&self) -> f64 {
+        if let Self::Number(i) = self {
+            return *i;
+        }
+
+        panic!("Evaluation result is not a number");
+    }
+}
+
 impl ArithmeticExpression {
-    pub fn evaluate(&self) -> f64 {
+    pub fn evaluate(&self) -> EvaluationResult {
         match self {
-            Self::Number(i) => *i,
-            Self::Add(i, j) => i.evaluate() + j.evaluate(),
-            Self::Subtract(i, j) => i.evaluate() - j.evaluate(),
-            Self::Multiply(i, j) => i.evaluate() * j.evaluate(),
-            Self::Divide(i, j) => i.evaluate() / j.evaluate(),
-            Self::Power(i, j) => i.evaluate().powf(j.evaluate()),
+            Self::Number(i) => EvaluationResult::Number(*i),
+            Self::Add(i, j) => {
+                EvaluationResult::Number(i.evaluate().get_number() + j.evaluate().get_number())
+            }
+            Self::Subtract(i, j) => {
+                EvaluationResult::Number(i.evaluate().get_number() - j.evaluate().get_number())
+            }
+            Self::Multiply(i, j) => {
+                EvaluationResult::Number(i.evaluate().get_number() * j.evaluate().get_number())
+            }
+            Self::Divide(i, j) => {
+                EvaluationResult::Number(i.evaluate().get_number() / j.evaluate().get_number())
+            }
+            Self::Power(i, j) => {
+                EvaluationResult::Number(i.evaluate().get_number().powf(j.evaluate().get_number()))
+            }
         }
     }
 
