@@ -1,6 +1,6 @@
 use std::io::Write;
 
-use super::AE;
+use crate::math::ArithmeticExpression;
 
 pub fn mainloop() {
     let mut previous: Option<String> = None;
@@ -14,8 +14,8 @@ pub fn mainloop() {
         }
 
         let expression = match previous {
-            Some(i) => AE::parse(expr.replace('_', &i).as_str()),
-            None => AE::parse(&expr),
+            Some(i) => ArithmeticExpression::parse(expr.replace('_', &i).as_str()),
+            None => ArithmeticExpression::parse(&expr),
         };
 
         match expression {

@@ -1,5 +1,4 @@
-mod parser;
-mod tokenizer;
+use super::{parser, tokenizer};
 
 #[derive(Debug)]
 pub enum ArithmeticExpression {

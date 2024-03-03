@@ -1,6 +1,5 @@
-mod algebra;
 mod arithmetic;
-mod calculus;
-mod trignometry;
+mod parser;
+mod tokenizer;
 
 pub use arithmetic::ArithmeticExpression;

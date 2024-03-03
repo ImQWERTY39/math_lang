@@ -1,14 +1,5 @@
 use super::ArithmeticExpression;
 
-/*
--8 / 0.5
-
-lowest precednce with no. of open brackets = 0
-
-if left or right is (expr):
-    eval(expr) and add to left or right of operator
-*/
-
 pub fn parse(expr: &[&str]) -> Option<ArithmeticExpression> {
     if expr.is_empty() {
         return None;

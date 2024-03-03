@@ -1,7 +1,5 @@
-mod math;
-use math::ArithmeticExpression as AE;
-
 mod interpreter;
+mod math;
 
 fn main() {
     interpreter::mainloop();
