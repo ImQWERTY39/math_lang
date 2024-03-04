@@ -1,4 +1,4 @@
-const SYMBOLS: [char; 7] = ['+', '-', '*', '/', '^', '(', ')'];
+const SYMBOLS: [char; 8] = ['+', '-', '*', '/', '^', '(', ')', '='];
 
 pub fn tokenize(expression: &str) -> Option<Vec<String>> {
     let mut tokenized = Vec::new();

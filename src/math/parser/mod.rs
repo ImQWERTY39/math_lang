@@ -1,7 +1,7 @@
 use super::ArithmeticExpression;
 
 pub fn parse(expr: &[&str]) -> Option<ArithmeticExpression> {
-    if expr.is_empty() {
+    if expr.is_empty() || expr.iter().filter(|x| **x == "=").count() > 1 {
         return None;
     }
 
@@ -12,7 +12,7 @@ pub fn parse(expr: &[&str]) -> Option<ArithmeticExpression> {
             return Some(ArithmeticExpression::Number(i));
         }
 
-        return Some(ArithmeticExpression::Vairable(number.to_string()));
+        return Some(ArithmeticExpression::Variable(number.to_string()));
     }
 
     if entire_expr_in_paren(expr) {
@@ -22,6 +22,10 @@ pub fn parse(expr: &[&str]) -> Option<ArithmeticExpression> {
     let idx = get_lowest_precedence_index(expr);
 
     Some(match expr[idx] {
+        "=" => ArithmeticExpression::Equate(
+            Box::new(parse(&expr[..idx])?),
+            Box::new(parse(&expr[idx + 1..])?),
+        ),
         "+" => ArithmeticExpression::Add(
             Box::new(parse(&expr[..idx])?),
             Box::new(parse(&expr[idx + 1..])?),
@@ -95,9 +99,10 @@ fn get_lowest_precedence_index(expr: &[&str]) -> usize {
 
 fn get_precedence_level(token: &str) -> u32 {
     match token {
-        "+" | "-" => 0,
-        "*" | "/" => 1,
-        "^" => 2,
-        _ => 3,
+        "=" => 0,
+        "+" | "-" => 1,
+        "*" | "/" => 2,
+        "^" => 3,
+        _ => 4,
     }
 }

@@ -36,10 +36,6 @@ pub fn mainloop() {
                 println!("{}", i);
                 previous = Some(i.to_string());
             }
-            EvaluationResult::Equality(i) => {
-                println!("{}", i);
-                previous = None;
-            }
             EvaluationResult::Assignment(i, j) => {
                 scope.insert(i, j);
                 previous = None;

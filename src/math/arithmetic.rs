@@ -5,18 +5,18 @@ use super::{parser, tokenizer};
 #[derive(Debug)]
 pub enum ArithmeticExpression {
     Number(f64),
-    Vairable(String),
+    Variable(String),
     Add(Box<Self>, Box<Self>),
     Subtract(Box<Self>, Box<Self>),
     Multiply(Box<Self>, Box<Self>),
     Divide(Box<Self>, Box<Self>),
     Power(Box<Self>, Box<Self>),
+    Equate(Box<Self>, Box<Self>),
 }
 
 #[derive(Debug)]
 pub enum EvaluationResult {
     Number(f64),
-    Equality(bool),
     Assignment(String, ArithmeticExpression),
 }
 
@@ -34,11 +34,9 @@ impl ArithmeticExpression {
     pub fn evaluate(&self, scope: &HashMap<String, Self>) -> EvaluationResult {
         match self {
             Self::Number(i) => EvaluationResult::Number(*i),
-            Self::Vairable(i) => {
-                if let Some(i) = scope.get(i) {
-                    if let Self::Number(j) = i {
-                        return EvaluationResult::Number(*j);
-                    }
+            Self::Variable(i) => {
+                if let Some(Self::Number(j)) = scope.get(i) {
+                    return EvaluationResult::Number(*j);
                 }
 
                 panic!("Variable doesn't exist");
@@ -60,6 +58,20 @@ impl ArithmeticExpression {
                     .get_number()
                     .powf(j.evaluate(scope).get_number()),
             ),
+            Self::Equate(i, j) => match **i {
+                ArithmeticExpression::Variable(ref k) => {
+                    let res = j.evaluate(scope);
+
+                    EvaluationResult::Assignment(
+                        k.clone(),
+                        match res {
+                            EvaluationResult::Number(i) => ArithmeticExpression::Number(i),
+                            EvaluationResult::Assignment(_, _) => unreachable!(),
+                        },
+                    )
+                }
+                _ => panic!(),
+            },
         }
     }
 
