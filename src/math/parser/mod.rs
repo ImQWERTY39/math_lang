@@ -6,12 +6,13 @@ pub fn parse(expr: &[&str]) -> Option<ArithmeticExpression> {
     }
 
     if expr.len() == 1 {
-        return Some(ArithmeticExpression::Number(
-            expr.first()
-                .unwrap()
-                .parse()
-                .expect("This should have been a number -._-."),
-        ));
+        let number = expr.first().unwrap();
+
+        if let Ok(i) = number.parse::<f64>() {
+            return Some(ArithmeticExpression::Number(i));
+        }
+
+        return Some(ArithmeticExpression::Vairable(number.to_string()));
     }
 
     if entire_expr_in_paren(expr) {

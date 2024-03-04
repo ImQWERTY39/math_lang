@@ -1,6 +1,6 @@
-use std::{collections::HashMap, io::Write};
-
 use crate::math::{ArithmeticExpression, EvaluationResult};
+use std::f64::consts::{E, PI};
+use std::{collections::HashMap, io::Write};
 
 pub fn mainloop() {
     let mut scope = init_scope();
@@ -21,17 +21,17 @@ pub fn mainloop() {
         }
 
         let expression = match previous {
-            Some(ref i) => ArithmeticExpression::parse(expr.replace('_', &i).as_str(), &scope),
-            None => ArithmeticExpression::parse(&expr, &scope),
+            Some(ref i) => ArithmeticExpression::parse(expr.replace('_', i).as_str()),
+            None => ArithmeticExpression::parse(expr),
         };
 
-        if let None = expression {
+        if expression.is_none() {
             println!("Invalid expression");
             previous = None;
             continue;
         }
 
-        match expression.unwrap().evaluate() {
+        match expression.unwrap().evaluate(&scope) {
             EvaluationResult::Number(i) => {
                 println!("{}", i);
                 previous = Some(i.to_string());
@@ -51,14 +51,8 @@ pub fn mainloop() {
 fn init_scope() -> HashMap<String, ArithmeticExpression> {
     let mut scope = HashMap::new();
 
-    scope.insert(
-        String::from("pi"),
-        ArithmeticExpression::Number(3.141592653589793),
-    );
-    scope.insert(
-        String::from('e'),
-        ArithmeticExpression::Number(2.718281828459045),
-    );
+    scope.insert(String::from("pi"), ArithmeticExpression::Number(PI));
+    scope.insert(String::from('e'), ArithmeticExpression::Number(E));
 
     scope
 }

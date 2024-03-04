@@ -1,6 +1,6 @@
 const SYMBOLS: [char; 7] = ['+', '-', '*', '/', '^', '(', ')'];
 
-pub fn tokenize(expression: &str) -> Vec<String> {
+pub fn tokenize(expression: &str) -> Option<Vec<String>> {
     let mut tokenized = Vec::new();
 
     let mut digit = String::new();
@@ -61,7 +61,7 @@ pub fn tokenize(expression: &str) -> Vec<String> {
         }
 
         if !SYMBOLS.contains(&i) {
-            panic!("Invalid token");
+            return None;
         }
 
         tokenized.push(i.to_string());
@@ -75,7 +75,7 @@ pub fn tokenize(expression: &str) -> Vec<String> {
         tokenized.push(word);
     }
 
-    correct_negative_numbers(tokenized)
+    Some(correct_negative_numbers(tokenized))
 }
 
 fn correct_negative_numbers(tokenized: Vec<String>) -> Vec<String> {

@@ -5,6 +5,7 @@ use super::{parser, tokenizer};
 #[derive(Debug)]
 pub enum ArithmeticExpression {
     Number(f64),
+    Vairable(String),
     Add(Box<Self>, Box<Self>),
     Subtract(Box<Self>, Box<Self>),
     Multiply(Box<Self>, Box<Self>),
@@ -30,40 +31,40 @@ impl EvaluationResult {
 }
 
 impl ArithmeticExpression {
-    pub fn evaluate(&self) -> EvaluationResult {
+    pub fn evaluate(&self, scope: &HashMap<String, Self>) -> EvaluationResult {
         match self {
             Self::Number(i) => EvaluationResult::Number(*i),
-            Self::Add(i, j) => {
-                EvaluationResult::Number(i.evaluate().get_number() + j.evaluate().get_number())
-            }
-            Self::Subtract(i, j) => {
-                EvaluationResult::Number(i.evaluate().get_number() - j.evaluate().get_number())
-            }
-            Self::Multiply(i, j) => {
-                EvaluationResult::Number(i.evaluate().get_number() * j.evaluate().get_number())
-            }
-            Self::Divide(i, j) => {
-                EvaluationResult::Number(i.evaluate().get_number() / j.evaluate().get_number())
-            }
-            Self::Power(i, j) => {
-                EvaluationResult::Number(i.evaluate().get_number().powf(j.evaluate().get_number()))
-            }
-        }
-    }
-
-    pub fn parse(expression: &str, scope: &HashMap<String, Self>) -> Option<Self> {
-        let expr: Vec<String> = tokenizer::tokenize(expression)
-            .iter()
-            .map(|x| {
-                if scope.contains_key(x) {
-                    if let Self::Number(i) = scope.get(x).unwrap() {
-                        return i.to_string();
+            Self::Vairable(i) => {
+                if let Some(i) = scope.get(i) {
+                    if let Self::Number(j) = i {
+                        return EvaluationResult::Number(*j);
                     }
                 }
 
-                x.to_owned()
-            })
-            .collect();
+                panic!("Variable doesn't exist");
+            }
+            Self::Add(i, j) => EvaluationResult::Number(
+                i.evaluate(scope).get_number() + j.evaluate(scope).get_number(),
+            ),
+            Self::Subtract(i, j) => EvaluationResult::Number(
+                i.evaluate(scope).get_number() - j.evaluate(scope).get_number(),
+            ),
+            Self::Multiply(i, j) => EvaluationResult::Number(
+                i.evaluate(scope).get_number() * j.evaluate(scope).get_number(),
+            ),
+            Self::Divide(i, j) => EvaluationResult::Number(
+                i.evaluate(scope).get_number() / j.evaluate(scope).get_number(),
+            ),
+            Self::Power(i, j) => EvaluationResult::Number(
+                i.evaluate(scope)
+                    .get_number()
+                    .powf(j.evaluate(scope).get_number()),
+            ),
+        }
+    }
+
+    pub fn parse(expression: &str) -> Option<Self> {
+        let expr = tokenizer::tokenize(expression)?;
         let expr_tokens: Vec<&str> = expr.iter().map(|x| x.as_str()).collect();
 
         parser::parse(&expr_tokens)
