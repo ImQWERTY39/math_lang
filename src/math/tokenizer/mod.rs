@@ -29,6 +29,14 @@ pub fn tokenize(expression: &str) -> Option<Vec<String>> {
         }
 
         if i.is_ascii_alphabetic() {
+            if in_digit {
+                tokenized.push(digit.clone());
+                tokenized.push("*".to_owned());
+
+                digit = String::new();
+                in_digit = false;
+            }
+
             if !in_word {
                 in_word = true;
             }
@@ -87,15 +95,17 @@ fn correct_negative_numbers(tokenized: Vec<String>) -> Vec<String> {
             if let Ok(number) = tokenized.get(1).unwrap_or(&String::new()).parse::<f64>() {
                 corrected.push((number * -1.0).to_string());
                 i += 2;
-                continue;
             } else {
                 corrected.push(tokenized[0].to_owned());
                 i += 1;
-                continue;
             }
+
+            continue;
         }
 
-        if tokenized[i] == "-" && tokenized.get(i - 1).unwrap().parse::<f64>().is_err() {
+        if tokenized[i] == "-"
+            && SYMBOLS.contains(&tokenized.get(i - 1).unwrap().chars().next().unwrap())
+        {
             if let Ok(number) = tokenized
                 .get(i + 1)
                 .unwrap_or(&String::new())
