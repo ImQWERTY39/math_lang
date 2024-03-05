@@ -14,14 +14,14 @@ pub fn tokenize(expression: &str) -> Option<Vec<String>> {
             if in_digit {
                 tokenized.push(digit.clone());
 
-                digit = String::new();
+                digit.clear();
                 in_digit = false;
             }
 
             if in_word {
                 tokenized.push(word.clone());
 
-                word = String::new();
+                word.clear();
                 in_word = false;
             }
 
@@ -31,9 +31,9 @@ pub fn tokenize(expression: &str) -> Option<Vec<String>> {
         if i.is_ascii_alphabetic() {
             if in_digit {
                 tokenized.push(digit.clone());
-                tokenized.push("*".to_owned());
+                tokenized.push(String::from("*"));
 
-                digit = String::new();
+                digit.clear();
                 in_digit = false;
             }
 
@@ -48,7 +48,7 @@ pub fn tokenize(expression: &str) -> Option<Vec<String>> {
         if in_word {
             tokenized.push(word.clone());
 
-            word = String::new();
+            word.clear();
             in_word = false;
         }
 
@@ -64,12 +64,22 @@ pub fn tokenize(expression: &str) -> Option<Vec<String>> {
         if in_digit {
             tokenized.push(digit.clone());
 
-            digit = String::new();
+            digit.clear();
             in_digit = false;
         }
 
         if !SYMBOLS.contains(&i) {
             return None;
+        }
+
+        if i == '(' {
+            let last = tokenized.last().unwrap_or(&String::new()).to_owned();
+            let is_number = last.parse::<f64>().is_ok();
+            let is_close_brac = last == ")";
+
+            if is_number || is_close_brac {
+                tokenized.push(String::from("*"));
+            }
         }
 
         tokenized.push(i.to_string());
