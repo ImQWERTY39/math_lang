@@ -114,7 +114,8 @@ fn correct_negative_numbers(tokenized: Vec<String>) -> Vec<String> {
         }
 
         if tokenized[i] == "-"
-            && SYMBOLS.contains(&tokenized.get(i - 1).unwrap().chars().next().unwrap())
+            && ['+', '-', '*', '/', '^']
+                .contains(&tokenized.get(i - 1).unwrap().chars().next().unwrap())
         {
             if let Ok(number) = tokenized
                 .get(i + 1)
