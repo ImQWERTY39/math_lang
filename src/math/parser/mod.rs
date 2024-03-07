@@ -2,7 +2,7 @@ use super::{tokenizer::Tokens, Expression};
 use crate::Scope;
 
 pub fn parse(expr: &[Tokens], scope: &Scope) -> Option<Expression> {
-    if expr.is_empty() || expr.iter().filter(|x| matches!(x, Tokens::Equate)).count() > 1 {
+    if expr.is_empty() {
         return None;
     }
 
