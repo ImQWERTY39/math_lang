@@ -1,84 +1,57 @@
-use std::collections::HashMap;
-
 use super::{parser, tokenizer};
+use crate::Scope;
 
-#[derive(Debug)]
-pub enum ArithmeticExpression {
+pub enum Expression {
     Number(f64),
     Variable(String),
-    Add(Box<Self>, Box<Self>),
-    Subtract(Box<Self>, Box<Self>),
-    Multiply(Box<Self>, Box<Self>),
-    Divide(Box<Self>, Box<Self>),
-    Power(Box<Self>, Box<Self>),
-    Equate(Box<Self>, Box<Self>),
+    Negate(Box<Expression>),
+    Add(Box<Expression>, Box<Expression>),
+    Subtract(Box<Expression>, Box<Expression>),
+    Multiply(Box<Expression>, Box<Expression>),
+    Divide(Box<Expression>, Box<Expression>),
+    Power(Box<Expression>, Box<Expression>),
+    Equate(Box<Expression>, Box<Expression>),
+    Function(Box<dyn Fn(Vec<Expression>, &Scope) -> f64>),
 }
 
-#[derive(Debug)]
-pub enum EvaluationResult {
-    Number(f64),
-    Assignment(String, ArithmeticExpression),
+/*
+float pi = 3.14159;
+
+float f(x) {
+    x^2 + 10x - 9pi
 }
 
-impl EvaluationResult {
-    fn get_number(&self) -> f64 {
-        if let Self::Number(i) = self {
-            return *i;
-        }
+1. UserFunction(Box<Expression>, scope)
+2. UserFunction(vec<args>, expression)
 
-        panic!("Evaluation result is not a number");
-    }
+for i in args {
+    expression = expression.replace(i, {});
 }
 
-impl ArithmeticExpression {
-    pub fn evaluate(&self, scope: &HashMap<String, Self>) -> EvaluationResult {
+Expression::parse(expression)
+
+f(x) => scope [Expression::Variable("x")]
+*/
+
+pub enum EvaluationResult {}
+
+impl Expression {
+    pub fn evaluate(&self, scope: &Scope) -> f64 {
         match self {
-            Self::Number(i) => EvaluationResult::Number(*i),
-            Self::Variable(i) => {
-                if let Some(Self::Number(j)) = scope.get(i) {
-                    return EvaluationResult::Number(*j);
-                }
-
-                panic!("Variable doesn't exist");
-            }
-            Self::Add(i, j) => EvaluationResult::Number(
-                i.evaluate(scope).get_number() + j.evaluate(scope).get_number(),
-            ),
-            Self::Subtract(i, j) => EvaluationResult::Number(
-                i.evaluate(scope).get_number() - j.evaluate(scope).get_number(),
-            ),
-            Self::Multiply(i, j) => EvaluationResult::Number(
-                i.evaluate(scope).get_number() * j.evaluate(scope).get_number(),
-            ),
-            Self::Divide(i, j) => EvaluationResult::Number(
-                i.evaluate(scope).get_number() / j.evaluate(scope).get_number(),
-            ),
-            Self::Power(i, j) => EvaluationResult::Number(
-                i.evaluate(scope)
-                    .get_number()
-                    .powf(j.evaluate(scope).get_number()),
-            ),
-            Self::Equate(i, j) => match **i {
-                ArithmeticExpression::Variable(ref k) => {
-                    let res = j.evaluate(scope);
-
-                    EvaluationResult::Assignment(
-                        k.clone(),
-                        match res {
-                            EvaluationResult::Number(i) => ArithmeticExpression::Number(i),
-                            EvaluationResult::Assignment(_, _) => unreachable!(),
-                        },
-                    )
-                }
-                _ => panic!(),
-            },
+            Expression::Number(i) => *i,
+            Expression::Variable(i) => scope.get(i).unwrap().evaluate(scope),
+            Expression::Negate(i) => i.evaluate(scope) * -1.0,
+            Expression::Add(i, j) => i.evaluate(scope) + j.evaluate(scope),
+            Expression::Subtract(i, j) => i.evaluate(scope) - j.evaluate(scope),
+            Expression::Multiply(i, j) => i.evaluate(scope) * j.evaluate(scope),
+            Expression::Divide(i, j) => i.evaluate(scope) / j.evaluate(scope),
+            Expression::Power(i, j) => i.evaluate(scope).powf(j.evaluate(scope)),
+            _ => unimplemented!(),
         }
     }
 
-    pub fn parse(expression: &str) -> Option<Self> {
-        let expr = tokenizer::tokenize(expression)?;
-        let expr_tokens: Vec<&str> = expr.iter().map(|x| x.as_str()).collect();
-
-        parser::parse(&expr_tokens)
+    pub fn parse(expression: &str, scope: &Scope) -> Option<Self> {
+        let expr = tokenizer::tokenize(expression, scope)?;
+        parser::parse(&expr, scope)
     }
 }

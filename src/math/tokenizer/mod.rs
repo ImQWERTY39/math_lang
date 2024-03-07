@@ -1,7 +1,43 @@
-const SYMBOLS: [char; 8] = ['+', '-', '*', '/', '^', '(', ')', '='];
+use crate::{Expression, Scope};
 
-pub fn tokenize(expression: &str) -> Option<Vec<String>> {
-    let mut tokenized = Vec::new();
+#[derive(Debug, Clone)]
+pub enum Tokens {
+    Number(f64),
+    Variable(String),
+    Add,
+    Subtract,
+    Negate,
+    Multiply,
+    Divide,
+    Power,
+    Comma,
+    Equate,
+    OpenBrackets,
+    CloseBrackets,
+    Function(String, Vec<Vec<Tokens>>),
+}
+
+impl TryFrom<char> for Tokens {
+    type Error = ();
+
+    fn try_from(value: char) -> Result<Self, Self::Error> {
+        Ok(match value {
+            '+' => Tokens::Add,
+            '-' => Tokens::Subtract,
+            '*' => Tokens::Multiply,
+            '/' => Tokens::Divide,
+            '^' => Tokens::Power,
+            '=' => Tokens::Equate,
+            '(' => Tokens::OpenBrackets,
+            ')' => Tokens::CloseBrackets,
+            ',' => Tokens::Comma,
+            _ => return Err(()),
+        })
+    }
+}
+
+pub fn tokenize(expression: &str, scope: &Scope) -> Option<Vec<Tokens>> {
+    let mut tokens = Vec::new();
 
     let mut digit = String::new();
     let mut in_digit = false;
@@ -9,29 +45,11 @@ pub fn tokenize(expression: &str) -> Option<Vec<String>> {
     let mut word = String::new();
     let mut in_word = false;
 
-    for i in expression.chars() {
-        if i.is_whitespace() {
-            if in_digit {
-                tokenized.push(digit.clone());
-
-                digit.clear();
-                in_digit = false;
-            }
-
-            if in_word {
-                tokenized.push(word.clone());
-
-                word.clear();
-                in_word = false;
-            }
-
-            continue;
-        }
-
+    for i in expression.chars().filter(|x| !x.is_whitespace()) {
         if i.is_ascii_alphabetic() {
             if in_digit {
-                tokenized.push(digit.clone());
-                tokenized.push(String::from("*"));
+                tokens.push(Tokens::Number(digit.parse().unwrap()));
+                tokens.push(Tokens::Multiply);
 
                 digit.clear();
                 in_digit = false;
@@ -46,7 +64,7 @@ pub fn tokenize(expression: &str) -> Option<Vec<String>> {
         }
 
         if in_word {
-            tokenized.push(word.clone());
+            tokens.push(Tokens::Variable(word.clone()));
 
             word.clear();
             in_word = false;
@@ -62,75 +80,113 @@ pub fn tokenize(expression: &str) -> Option<Vec<String>> {
         }
 
         if in_digit {
-            tokenized.push(digit.clone());
+            tokens.push(Tokens::Number(digit.parse().unwrap()));
 
             digit.clear();
             in_digit = false;
         }
 
-        if !SYMBOLS.contains(&i) {
-            return None;
-        }
-
-        if i == '(' {
-            let last = tokenized.last().unwrap_or(&String::new()).to_owned();
-            let is_number = last.parse::<f64>().is_ok();
-            let is_close_brac = last == ")";
-
-            if is_number || is_close_brac {
-                tokenized.push(String::from("*"));
-            }
-        }
-
-        tokenized.push(i.to_string());
+        tokens.push(i.try_into().ok()?);
     }
 
-    if !digit.is_empty() {
-        tokenized.push(digit);
+    if in_digit {
+        tokens.push(Tokens::Number(digit.parse().unwrap()));
     }
 
-    if !word.is_empty() {
-        tokenized.push(word);
+    if in_word {
+        tokens.push(Tokens::Variable(word));
     }
 
-    Some(correct_negative_numbers(tokenized))
+    correct(tokens, scope)
 }
 
-fn correct_negative_numbers(tokenized: Vec<String>) -> Vec<String> {
-    let mut corrected = Vec::with_capacity(tokenized.len());
+fn correct(tokens: Vec<Tokens>, scope: &Scope) -> Option<Vec<Tokens>> {
+    let mut tokens_corrected = Vec::new();
     let mut i = 0;
 
-    while i < tokenized.len() {
-        if i == 0 && tokenized[0] == "-" {
-            if let Ok(number) = tokenized.get(1).unwrap_or(&String::new()).parse::<f64>() {
-                corrected.push((number * -1.0).to_string());
-                i += 2;
+    while i < tokens.len() {
+        if let Tokens::Subtract = tokens[i] {
+            if i == 0 {
+                tokens_corrected.push(Tokens::Negate);
             } else {
-                corrected.push(tokenized[0].to_owned());
-                i += 1;
+                match tokens[i - 1] {
+                    Tokens::Number(_) | Tokens::Variable(_) /*| Tokens::Function(_, _)*/ => {
+                        tokens_corrected.push(Tokens::Subtract)
+                    }
+                    _ => {
+                        tokens_corrected.push(Tokens::Negate);
+                    }
+                }
             }
-
-            continue;
-        }
-
-        if tokenized[i] == "-"
-            && ['+', '-', '*', '/', '^']
-                .contains(&tokenized.get(i - 1).unwrap().chars().next().unwrap())
-        {
-            if let Ok(number) = tokenized
-                .get(i + 1)
-                .unwrap_or(&String::new())
-                .parse::<f64>()
-            {
-                corrected.push((number * -1.0).to_string());
-                i += 2;
+        } else if let Tokens::OpenBrackets = tokens[i] {
+            if i == 0 {
+                tokens_corrected.push(Tokens::OpenBrackets);
+                i += 1;
                 continue;
             }
+
+            if matches!(
+                tokens.get(i - 1).unwrap(),
+                Tokens::CloseBrackets | Tokens::Number(_) | Tokens::Variable(_)
+            ) {
+                tokens_corrected.push(Tokens::Multiply);
+                tokens_corrected.push(tokens[i].clone());
+            }
+        } else if let Tokens::Variable(ref var_name) = tokens[i] {
+            if scope
+                .get(var_name)
+                .is_some_and(|x| matches!(x, Expression::Function(..)))
+            {
+                i += 2;
+
+                let mut arguments = Vec::new();
+                let mut current = Vec::new();
+
+                let mut open_brac = 1;
+
+                while i < tokens.len() && open_brac > 0 {
+                    let token = tokens[i].clone();
+
+                    match token {
+                        Tokens::Comma if open_brac == 1 => {
+                            arguments.push(correct(current.clone(), scope)?);
+                            current.clear();
+                        }
+                        Tokens::OpenBrackets => {
+                            open_brac += 1;
+
+                            if open_brac > 1 {
+                                current.push(Tokens::OpenBrackets);
+                            }
+                        }
+                        Tokens::CloseBrackets => {
+                            open_brac -= 1;
+
+                            if open_brac > 0 {
+                                current.push(Tokens::CloseBrackets);
+                            }
+                        }
+                        other => current.push(other),
+                    }
+
+                    i += 1;
+                }
+
+                if !current.is_empty() {
+                    arguments.push(correct(current, scope)?);
+                }
+
+                tokens_corrected.push(Tokens::Function(var_name.to_owned(), arguments));
+                continue;
+            } else {
+                tokens_corrected.push(tokens[i].clone());
+            }
+        } else {
+            tokens_corrected.push(tokens[i].clone());
         }
 
-        corrected.push(tokenized[i].to_owned());
         i += 1;
     }
 
-    corrected
+    Some(tokens_corrected)
 }

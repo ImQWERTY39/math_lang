@@ -1,4 +1,5 @@
-use crate::math::{ArithmeticExpression, EvaluationResult};
+use crate::math::Expression;
+use crate::Scope;
 use std::f64::consts::{E, PI};
 use std::{collections::HashMap, io::Write};
 
@@ -21,8 +22,8 @@ pub fn mainloop() {
         }
 
         let expression = match previous {
-            Some(ref i) => ArithmeticExpression::parse(expr.replace('_', i).as_str()),
-            None => ArithmeticExpression::parse(expr),
+            Some(ref i) => Expression::parse(expr.replace('_', i).as_str(), &scope),
+            None => Expression::parse(expr, &scope),
         };
 
         if expression.is_none() {
@@ -31,24 +32,32 @@ pub fn mainloop() {
             continue;
         }
 
-        match expression.unwrap().evaluate(&scope) {
-            EvaluationResult::Number(i) => {
-                println!("{}", i);
-                previous = Some(i.to_string());
-            }
-            EvaluationResult::Assignment(i, j) => {
-                scope.insert(i, j);
-                previous = None;
-            }
-        }
+        // match expression.unwrap().evaluate(&scope) {
+        // EvaluationResult::Number(i) => {
+        let eval_result = expression.unwrap().evaluate(&scope);
+        println!("{eval_result}");
+        previous = Some(eval_result.to_string());
+        // }
+        // EvaluationResult::Assignment(i, j) => {
+        // scope.insert(i, j);
+        // previous = None;
+        // }
+        // }
     }
 }
 
-fn init_scope() -> HashMap<String, ArithmeticExpression> {
+fn init_scope() -> HashMap<String, Expression> {
     let mut scope = HashMap::new();
 
-    scope.insert(String::from("pi"), ArithmeticExpression::Number(PI));
-    scope.insert(String::from('e'), ArithmeticExpression::Number(E));
+    scope.insert(String::from("pi"), Expression::Number(PI));
+    scope.insert(String::from('e'), Expression::Number(E));
+
+    scope.insert(
+        String::from("sin"),
+        Expression::Function(Box::new(|arguments: Vec<Expression>, scope: &Scope| {
+            arguments[0].evaluate(scope).sin()
+        })),
+    );
 
     scope
 }

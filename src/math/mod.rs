@@ -1,5 +1,5 @@
-mod arithmetic;
-mod parser;
-mod tokenizer;
+pub mod parser;
+pub mod tokenizer;
 
-pub use arithmetic::{ArithmeticExpression, EvaluationResult};
+mod arithmetic;
+pub use arithmetic::Expression;
