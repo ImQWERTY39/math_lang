@@ -110,7 +110,7 @@ fn correct(tokens: Vec<Tokens>, scope: &Scope) -> Option<Vec<Tokens>> {
                 tokens_corrected.push(Tokens::Negate);
             } else {
                 match tokens[i - 1] {
-                    Tokens::Number(_) | Tokens::Variable(_) /*| Tokens::Function(_, _)*/ => {
+                    Tokens::Number(_) | Tokens::Variable(_) | Tokens::Function(_, _) => {
                         tokens_corrected.push(Tokens::Subtract)
                     }
                     _ => {
@@ -132,11 +132,25 @@ fn correct(tokens: Vec<Tokens>, scope: &Scope) -> Option<Vec<Tokens>> {
                 tokens_corrected.push(Tokens::Multiply);
                 tokens_corrected.push(tokens[i].clone());
             }
+            tokens_corrected.push(Tokens::OpenBrackets);
         } else if let Tokens::Variable(ref var_name) = tokens[i] {
-            if scope
+            /*
+            check if its a defined function
+            or = after function name
+            */
+            let in_built = scope
                 .get(var_name)
-                .is_some_and(|x| matches!(x, Expression::Function(..)))
-            {
+                .is_some_and(|x| matches!(x, Expression::Function(..)));
+
+            let user_defined = match scope.get(var_name) {
+                Some(i) => match i {
+                    Expression::Number(_) | Expression::Variable(_) => false,
+                    _ => true,
+                },
+                None => matches!(tokens[i + 1], Tokens::OpenBrackets),
+            };
+
+            if in_built {
                 i += 2;
 
                 let mut arguments = Vec::new();
@@ -178,6 +192,8 @@ fn correct(tokens: Vec<Tokens>, scope: &Scope) -> Option<Vec<Tokens>> {
 
                 tokens_corrected.push(Tokens::Function(var_name.to_owned(), arguments));
                 continue;
+            } else if user_defined {
+                unimplemented!("{:?} | {} | {}", tokens[i], in_built, user_defined);
             } else {
                 tokens_corrected.push(tokens[i].clone());
             }
