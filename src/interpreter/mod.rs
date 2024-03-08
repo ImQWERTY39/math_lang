@@ -139,6 +139,23 @@ fn init_scope() -> HashMap<String, Expression> {
         })),
     );
 
+    scope.insert(
+        String::from("logn"),
+        Expression::Function(Box::new(|arguments: Vec<Expression>, scope: &Scope| {
+            if let EvaluationResult::Number(i) = arguments[1].evaluate(scope) {
+                return i.log(
+                    if let EvaluationResult::Number(i) = arguments[0].evaluate(scope) {
+                        i
+                    } else {
+                        panic!()
+                    },
+                );
+            }
+
+            panic!()
+        })),
+    );
+
     scope
 }
 

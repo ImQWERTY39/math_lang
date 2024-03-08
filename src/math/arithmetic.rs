@@ -73,9 +73,9 @@ impl Expression {
                     );
                 }
 
-                panic!()
+                unimplemented!()
             }
-            _ => unimplemented!(),
+            _ => unreachable!(),
         }
     }
 

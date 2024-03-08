@@ -130,5 +130,5 @@ fn call_function(scope: &Scope, name: &str, args: &[Vec<Tokens>]) -> f64 {
         arguments.push(parse(i, scope).unwrap());
     }
 
-    function(arguments, scope)
+    function(arguments, scope) /* create a function to call this funtion*/
 }
