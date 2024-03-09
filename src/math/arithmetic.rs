@@ -19,6 +19,12 @@ impl EvaluationResult {
     }
 }
 
+impl From<f64> for EvaluationResult {
+    fn from(value: f64) -> Self {
+        EvaluationResult::Number(value)
+    }
+}
+
 pub enum Expression {
     Number(f64),
     Variable(String),
@@ -29,12 +35,6 @@ pub enum Expression {
     Divide(Box<Expression>, Box<Expression>),
     Power(Box<Expression>, Box<Expression>),
     Equate(Box<Expression>, Box<Expression>),
-}
-
-impl From<f64> for EvaluationResult {
-    fn from(value: f64) -> Self {
-        EvaluationResult::Number(value)
-    }
 }
 
 impl Expression {
