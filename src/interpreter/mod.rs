@@ -1,5 +1,4 @@
 use crate::math::{EvaluationResult, Expression};
-use crate::Scope;
 use std::f64::consts::{E, PI};
 use std::{collections::HashMap, io::Write};
 
@@ -51,7 +50,7 @@ fn init_scope() -> HashMap<String, Expression> {
     scope.insert(String::from("pi"), Expression::Number(PI));
     scope.insert(String::from('e'), Expression::Number(E));
 
-    scope.insert(
+    /*    scope.insert(
         String::from("sin"),
         Expression::Function(Box::new(|arguments: Vec<Expression>, scope: &Scope| {
             if let EvaluationResult::Number(i) = arguments[0].evaluate(scope) {
@@ -154,7 +153,7 @@ fn init_scope() -> HashMap<String, Expression> {
 
             panic!()
         })),
-    );
+    );*/
 
     scope
 }

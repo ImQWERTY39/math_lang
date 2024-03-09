@@ -1,4 +1,4 @@
-use crate::{Expression, Scope};
+use crate::Scope;
 
 #[derive(Debug, Clone)]
 pub enum Tokens {
@@ -14,7 +14,6 @@ pub enum Tokens {
     Equate,
     OpenBrackets,
     CloseBrackets,
-    Function(String, Vec<Vec<Tokens>>),
 }
 
 impl TryFrom<char> for Tokens {
@@ -36,7 +35,7 @@ impl TryFrom<char> for Tokens {
     }
 }
 
-pub fn tokenize(expression: &str, scope: &Scope) -> Option<Vec<Tokens>> {
+pub fn tokenize(expression: &str, _scope: &Scope) -> Option<Vec<Tokens>> {
     let mut tokens = Vec::new();
 
     let mut digit = String::new();
@@ -97,10 +96,10 @@ pub fn tokenize(expression: &str, scope: &Scope) -> Option<Vec<Tokens>> {
         tokens.push(Tokens::Variable(word));
     }
 
-    correct(tokens, scope)
+    correct(tokens, _scope)
 }
 
-fn correct(tokens: Vec<Tokens>, scope: &Scope) -> Option<Vec<Tokens>> {
+fn correct(tokens: Vec<Tokens>, _scope: &Scope) -> Option<Vec<Tokens>> {
     let mut tokens_corrected = Vec::new();
     let mut i = 0;
 
@@ -110,7 +109,7 @@ fn correct(tokens: Vec<Tokens>, scope: &Scope) -> Option<Vec<Tokens>> {
                 tokens_corrected.push(Tokens::Negate);
             } else {
                 match tokens[i - 1] {
-                    Tokens::Number(_) | Tokens::Variable(_) | Tokens::Function(_, _) => {
+                    Tokens::Number(_) | Tokens::Variable(_) => {
                         tokens_corrected.push(Tokens::Subtract)
                     }
                     _ => {
@@ -133,70 +132,6 @@ fn correct(tokens: Vec<Tokens>, scope: &Scope) -> Option<Vec<Tokens>> {
                 tokens_corrected.push(tokens[i].clone());
             }
             tokens_corrected.push(Tokens::OpenBrackets);
-        } else if let Tokens::Variable(ref var_name) = tokens[i] {
-            /*
-            check if its a defined function
-            or = after function name
-            */
-            let in_built = scope
-                .get(var_name)
-                .is_some_and(|x| matches!(x, Expression::Function(..)));
-
-            let user_defined = match scope.get(var_name) {
-                Some(i) => match i {
-                    Expression::Number(_) | Expression::Variable(_) => false,
-                    _ => true,
-                },
-                None => matches!(tokens[i + 1], Tokens::OpenBrackets),
-            };
-
-            if in_built {
-                i += 2;
-
-                let mut arguments = Vec::new();
-                let mut current = Vec::new();
-
-                let mut open_brac = 1;
-
-                while i < tokens.len() && open_brac > 0 {
-                    let token = tokens[i].clone();
-
-                    match token {
-                        Tokens::Comma if open_brac == 1 => {
-                            arguments.push(correct(current.clone(), scope)?);
-                            current.clear();
-                        }
-                        Tokens::OpenBrackets => {
-                            open_brac += 1;
-
-                            if open_brac > 1 {
-                                current.push(Tokens::OpenBrackets);
-                            }
-                        }
-                        Tokens::CloseBrackets => {
-                            open_brac -= 1;
-
-                            if open_brac > 0 {
-                                current.push(Tokens::CloseBrackets);
-                            }
-                        }
-                        other => current.push(other),
-                    }
-
-                    i += 1;
-                }
-
-                if !current.is_empty() {
-                    arguments.push(correct(current, scope)?);
-                }
-
-                tokens_corrected.push(Tokens::Function(var_name.to_owned(), arguments));
-                continue;
-            } else if user_defined {
-                unimplemented!("{:?} | {} | {}", tokens[i], in_built, user_defined);
-            } else {
-                tokens_corrected.push(tokens[i].clone());
-            }
         } else {
             tokens_corrected.push(tokens[i].clone());
         }

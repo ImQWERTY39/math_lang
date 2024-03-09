@@ -4,21 +4,6 @@ use super::{
 };
 use crate::Scope;
 
-type InbuiltFunction = dyn Fn(Vec<Expression>, &Scope) -> f64;
-
-pub enum Expression {
-    Number(f64),
-    Variable(String),
-    Negate(Box<Expression>),
-    Add(Box<Expression>, Box<Expression>),
-    Subtract(Box<Expression>, Box<Expression>),
-    Multiply(Box<Expression>, Box<Expression>),
-    Divide(Box<Expression>, Box<Expression>),
-    Power(Box<Expression>, Box<Expression>),
-    Equate(Box<Expression>, Box<Expression>),
-    Function(Box<InbuiltFunction>),
-}
-
 pub enum EvaluationResult {
     Number(f64),
     AssignNumber(String, f64),
@@ -32,6 +17,18 @@ impl EvaluationResult {
 
         panic!("Not a number");
     }
+}
+
+pub enum Expression {
+    Number(f64),
+    Variable(String),
+    Negate(Box<Expression>),
+    Add(Box<Expression>, Box<Expression>),
+    Subtract(Box<Expression>, Box<Expression>),
+    Multiply(Box<Expression>, Box<Expression>),
+    Divide(Box<Expression>, Box<Expression>),
+    Power(Box<Expression>, Box<Expression>),
+    Equate(Box<Expression>, Box<Expression>),
 }
 
 impl From<f64> for EvaluationResult {
@@ -75,7 +72,6 @@ impl Expression {
 
                 unimplemented!()
             }
-            _ => unreachable!(),
         }
     }
 

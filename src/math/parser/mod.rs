@@ -1,7 +1,7 @@
 use super::{tokenizer::Tokens, Expression};
 use crate::Scope;
 
-pub fn parse(expr: &[Tokens], scope: &Scope) -> Option<Expression> {
+pub fn parse(expr: &[Tokens], _scope: &Scope) -> Option<Expression> {
     if expr.is_empty() {
         return None;
     }
@@ -10,50 +10,46 @@ pub fn parse(expr: &[Tokens], scope: &Scope) -> Option<Expression> {
         return match expr.first().unwrap() {
             Tokens::Number(i) => Some(Expression::Number(*i)),
             Tokens::Variable(i) => Some(Expression::Variable(i.clone())),
-            Tokens::Function(name, args) => {
-                Some(Expression::Number(call_function(scope, name, args)))
-            }
             _ => None,
         };
     }
 
     if matches!(expr.first().unwrap(), Tokens::Negate) {
-        return Some(Expression::Negate(Box::new(parse(&expr[1..], scope)?)));
+        return Some(Expression::Negate(Box::new(parse(&expr[1..], _scope)?)));
     }
 
     if entire_expr_in_paren(expr) {
-        return parse(&expr[1..expr.len() - 1], scope);
+        return parse(&expr[1..expr.len() - 1], _scope);
     }
 
     let idx = get_lowest_precedence(expr);
     Some(match expr[idx] {
         Tokens::Equate => Expression::Equate(
-            Box::new(parse(&expr[..idx], scope)?),
-            Box::new(parse(&expr[idx + 1..], scope)?),
+            Box::new(parse(&expr[..idx], _scope)?),
+            Box::new(parse(&expr[idx + 1..], _scope)?),
         ),
-
         Tokens::Add => Expression::Add(
-            Box::new(parse(&expr[..idx], scope)?),
-            Box::new(parse(&expr[idx + 1..], scope)?),
+            Box::new(parse(&expr[..idx], _scope)?),
+            Box::new(parse(&expr[idx + 1..], _scope)?),
         ),
         Tokens::Subtract => Expression::Subtract(
-            Box::new(parse(&expr[..idx], scope)?),
-            Box::new(parse(&expr[idx + 1..], scope)?),
+            Box::new(parse(&expr[..idx], _scope)?),
+            Box::new(parse(&expr[idx + 1..], _scope)?),
         ),
 
         Tokens::Multiply => Expression::Multiply(
-            Box::new(parse(&expr[..idx], scope)?),
-            Box::new(parse(&expr[idx + 1..], scope)?),
+            Box::new(parse(&expr[..idx], _scope)?),
+            Box::new(parse(&expr[idx + 1..], _scope)?),
         ),
 
         Tokens::Divide => Expression::Divide(
-            Box::new(parse(&expr[..idx], scope)?),
-            Box::new(parse(&expr[idx + 1..], scope)?),
+            Box::new(parse(&expr[..idx], _scope)?),
+            Box::new(parse(&expr[idx + 1..], _scope)?),
         ),
 
         Tokens::Power => Expression::Power(
-            Box::new(parse(&expr[..idx], scope)?),
-            Box::new(parse(&expr[idx + 1..], scope)?),
+            Box::new(parse(&expr[..idx], _scope)?),
+            Box::new(parse(&expr[idx + 1..], _scope)?),
         ),
         _ => unreachable!(),
     })
@@ -91,6 +87,7 @@ fn get_precedence_level(token: &Tokens) -> u32 {
         _ => 4,
     }
 }
+
 fn entire_expr_in_paren(expr: &[Tokens]) -> bool {
     if expr
         .first()
@@ -116,19 +113,4 @@ fn entire_expr_in_paren(expr: &[Tokens]) -> bool {
     }
 
     true
-}
-
-fn call_function(scope: &Scope, name: &str, args: &[Vec<Tokens>]) -> f64 {
-    let function = match scope.get(name).unwrap() {
-        Expression::Function(i) => i,
-        _ => unreachable!(),
-    };
-
-    let mut arguments = Vec::with_capacity(args.len());
-
-    for i in args {
-        arguments.push(parse(i, scope).unwrap());
-    }
-
-    function(arguments, scope) /* create a function to call this funtion*/
 }
